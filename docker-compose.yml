@@ -1,0 +1,14 @@
+services:
+  db:
+    image: postgres:16          # どのイメージを使うか
+    environment:               # コンテナ内の環境変数（＝DBユーザー・DB名・パス）
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: task_app
+    ports:                     # ホスト:コンテナ のポート対応
+      - "5432:5432"
+    volumes:                   # データ永続化
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
