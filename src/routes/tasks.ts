@@ -1,4 +1,3 @@
-import { error } from "node:console";
 import { pool } from "../db";
 import { Router, Request, Response } from "express";
 
@@ -170,6 +169,30 @@ tasksRouter.patch('/:id', async (req: Request, res: Response) => {
         return res.status(200).json(result.rows[0]);
     } catch (err) {
         console.error('PATCH /:id error', err);
+        res.status(500).json({ error: 'サーバーエラーが発生しました' });
+    }
+});
+
+//削除
+tasksRouter.delete('/:id', async (req: Request, res: Response) => {
+    try {
+        const id = Number(req.params.id);
+        if(Number.isNaN(id) || id <= 0){
+           return res.status(400).json({ error: 'IDは必須です' });
+        }
+
+        const result = await pool.query(
+            'DELETE FROM tasks WHERE id = $1 RETURNING id, title, status, priority, due_date, updated_at',
+            [id]
+        )
+
+        if(result.rows.length === 0){
+            return res.status(404).json({ error: '対象がみつかりません' });
+        }
+
+        return res.status(200).json(result.rows[0]);
+    } catch (err) {
+        console.error('DELETE /:id error', err);
         res.status(500).json({ error: 'サーバーエラーが発生しました' });
     }
 });

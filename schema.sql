@@ -9,3 +9,11 @@ CREATE TABLE tasks (
     created_by TEXT NOT NULL DEFAULT 'manager',
     due_date TIMESTAMPTZ
 );
+
+CREATE TABLE users(
+    id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    email TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    role TEXT NOT NULL CHECK (role IN('manager','staff')) DEFAULT 'staff',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
