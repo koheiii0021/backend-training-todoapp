@@ -69,65 +69,107 @@ tasksRouter.get('/:id', async (req: Request, res: Response) => {
 });
 
 //更新
-
 tasksRouter.patch('/:id', async (req: Request, res: Response) => {
     try {
         const id = Number(req.params.id);
-        const { status, priority} = req.body;
+        const { title, detail, due_date, status, priority} = req.body;
 
         if(Number.isNaN(id) || id <= 0){
-            return res.status(400).json({ error: 'idは必須です' });
-        }
-
-        if(status === undefined && priority === undefined){
-            res.status(400).json({ error : 'status または priority を指定してください' });
+            res.status(400).json({ error: 'IDは必須です' });
             return ;
         }
 
-        const setClauses: string[] = [];
-        const values: any = [];
+        //(2) 不明キー　を検知して400　
+        const allowedKeys = ["title", "detail", "due_date", "status", "priority"];
+        const bodyKeys = Object.keys(req.body);
 
-        //status 任意
-        if(status !== undefined){
-            const allowed = ["new", "in_progress", "completed"];
-            if(!allowed.includes(status)){
-                return res.status(400).json({ error: "statusが不正です" });
+        const unknownKeys = bodyKeys.filter((k) => !allowedKeys.includes(k));
+        if(unknownKeys.length > 0) {
+            return res.status(400).json({ error: `不明なキーがあります: ${unknownKeys.join(", ")}`});
+        }
+
+        //(3) 空更新(更新対象がないとき) 400 ←ここもわからなくなった
+        if(bodyKeys.length === 0){
+            return res.status(400).json({ error: '更新項目がありません' });
+        }
+
+        //(4) バリデーション
+
+        const setClauses = [];
+        const values = [];
+
+        //title 
+        if(title !== undefined){
+            if(typeof title !== "string" || title.trim().length === 0){
+                return res.status(400).json({ error: 'titleは必須です' });
+            }
+            values.push(title);
+            setClauses.push(`title = $${values.length}`);
+        }
+
+        //detail  
+        if(detail !== undefined){
+            if(!(typeof detail === "string" || detail === null)){
+               return res.status(400).json({ error: 'detailは'})
+            }
+            values.push(detail);
+            setClauses.push(`detail = $${values.length}`);
+        }
+
+        //due_date 
+        if(due_date !== undefined){
+            if(due_date !== null && typeof due_date !== "string") {
+                return res.status(400).json({ error: 'error' });
             }
 
+            if(typeof due_date === "string"){
+                const d = new Date(due_date);
+                if(Number.isNaN(d.getTime())){
+                    res.status(400).json({ error: 'due_dateが正しくありません' })
+                    return ;
+                }
+            }
+            values.push(due_date);
+            setClauses.push(`due_date = $${values.length}`);
+        }
+
+        //status
+        if(status !== undefined){
+            const allowedStatus = ['new', 'in_progress', 'completed'];
+            if(!allowedStatus.includes(status)){
+                return res.status(400).json({ error: 'ステータスがただしくありません' })
+            }
             values.push(status);
             setClauses.push(`status = $${values.length}`);
         }
 
-        //priority　任意
+        //priority
         if(priority !== undefined){
             if(!Number.isInteger(priority) || priority < 1 || priority > 3){
-                return res.status(400).json({ error: 'priorityは1~3で指定してください' });
+               return res.status(400).json({ error: 'priorityは1~3で設定してください' });
             }
             values.push(priority);
-            setClauses.push(`priority = $${values.length}`);
+            setClauses.push(`priority = $${values.length}`);    
         }
-        // update_atは必ず更新
+
         setClauses.push("updated_at = now()");
+        values.push(id)
 
-        // WHEREのidは最後
-        values.push(id);
-
+        //SQL 動的に組む
         const sql = `
         UPDATE tasks
         SET ${setClauses.join(", ")}
         WHERE id = $${values.length}
-        RETURNING id, title, status, priority, updated_at, due_date
-        `;
+        RETURNING id, title, detail, due_date, status, priority, updated_at`;
 
         const result = await pool.query(sql, values);
 
         if(result.rows.length === 0){
-            return res.status(404).json({ error: "データがありません" });
+            return res.status(404).json({ error: 'IDが存在しません' })
         }
         return res.status(200).json(result.rows[0]);
-
     } catch (err) {
-        console.error('PATCH /tasks/:id error', err);
+        console.error('PATCH /:id error', err);
         res.status(500).json({ error: 'サーバーエラーが発生しました' });
     }
 });
