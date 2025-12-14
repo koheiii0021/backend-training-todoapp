@@ -1,11 +1,12 @@
 import { pool } from "../db";
 import { Router, Request, Response } from "express";
+import { authMiddleware } from "../middleware/authMiddleware";
 
 
 export const tasksRouter = Router();
 
 //作成
-tasksRouter.post('/', async (req: Request, res: Response) => {
+tasksRouter.post('/', authMiddleware, async (req: Request, res: Response) => {
     try {
         const { title } = req.body;
 
@@ -68,7 +69,7 @@ tasksRouter.get('/:id', async (req: Request, res: Response) => {
 });
 
 //更新
-tasksRouter.patch('/:id', async (req: Request, res: Response) => {
+tasksRouter.patch('/:id', authMiddleware, async (req: Request, res: Response) => {
     try {
         const id = Number(req.params.id);
         const { title, detail, due_date, status, priority} = req.body;
@@ -174,7 +175,7 @@ tasksRouter.patch('/:id', async (req: Request, res: Response) => {
 });
 
 //削除
-tasksRouter.delete('/:id', async (req: Request, res: Response) => {
+tasksRouter.delete('/:id', authMiddleware, async (req: Request, res: Response) => {
     try {
         const id = Number(req.params.id);
         if(Number.isNaN(id) || id <= 0){
