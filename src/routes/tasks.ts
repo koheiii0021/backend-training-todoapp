@@ -27,7 +27,7 @@ tasksRouter.post('/', authMiddleware, async (req: Request, res: Response) => {
     }
 });
 
-//一覧
+//一覧取得
 tasksRouter.get('/', async (req: Request, res: Response) => {
     try {
         const result = await pool.query(
