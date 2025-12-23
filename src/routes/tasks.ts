@@ -1,6 +1,7 @@
 import { pool } from "../db";
 import { Router, Request, Response } from "express";
 import { authMiddleware } from "../middleware/authMiddleware";
+import { requireRole } from "../middleware/requireRole";
 
 
 export const tasksRouter = Router();
@@ -175,7 +176,7 @@ tasksRouter.patch('/:id', authMiddleware, async (req: Request, res: Response) =>
 });
 
 //削除
-tasksRouter.delete('/:id', authMiddleware, async (req: Request, res: Response) => {
+tasksRouter.delete('/:id', authMiddleware, requireRole("manager"), async (req: Request, res: Response) => {
     try {
         const id = Number(req.params.id);
         if(Number.isNaN(id) || id <= 0){
